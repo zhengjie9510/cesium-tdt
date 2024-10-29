@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <!-- Include the CesiumJS JavaScript and CSS files -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.105.1/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.105.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script src="/static/bytebuffer.min.js"></script>
     <script src="/static/cesiumTdt.js"></script>
     <style>
@@ -21,15 +21,11 @@
 <body>
     <div id="cesiumContainer"></div>
     <script>
-        const token = '2bf4882ce24ab1dfa287079fc92449f1'
+        const token = 'cec5eeadc16a3c964451ff083266df0c'
         // 服务域名
         const tdtUrl = 'https://t{s}.tianditu.gov.cn/';
         // 服务负载子域
         const subdomains = ['0', '1', '2', '3', '4', '5', '6', '7'];
-
-        // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
-        const viewer = new Cesium.Viewer('cesiumContainer');
-
         // 叠加影像服务
         const imgMap = new Cesium.UrlTemplateImageryProvider({
             url: tdtUrl + 'DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' + token,
@@ -37,7 +33,27 @@
             tilingScheme: new Cesium.WebMercatorTilingScheme(),
             maximumLevel: 18
         });
-        viewer.imageryLayers.addImageryProvider(imgMap);
+        // 叠加地形服务
+        const terrainUrls = new Array();
+        for (let i = 0; i < subdomains.length; i++) {
+            const url = tdtUrl.replace('{s}', subdomains[i]) + 'mapservice/swdx?T=elv_c&tk=' + token;
+            terrainUrls.push(url);
+        }
+        const provider = new Cesium.GeoTerrainProvider({
+            urls: terrainUrls
+        });
+
+        // 初始化地球
+        const viewer = new Cesium.Viewer('cesiumContainer',{
+            baseLayerPicker: false,
+            baseLayer:new Cesium.ImageryLayer(imgMap),
+            terrain:new Cesium.Terrain(provider)
+        })
+        if (Cesium.FeatureDetection.supportsImageRenderingPixelated()) {
+            //判断是否支持图像渲染像素化处理
+            viewer.resolutionScale = window.devicePixelRatio
+        }
+        viewer.scene.postProcessStages.fxaa.enabled = true
 
         // 叠加国界服务
         const iboMap = new Cesium.UrlTemplateImageryProvider({
@@ -47,20 +63,7 @@
             maximumLevel: 10
         });
         viewer.imageryLayers.addImageryProvider(iboMap);
-
-        // 叠加地形服务
-        const terrainUrls = new Array();
-
-        for (let i = 0; i < subdomains.length; i++) {
-            const url = tdtUrl.replace('{s}', subdomains[i]) + 'mapservice/swdx?T=elv_c&tk=' + token;
-            terrainUrls.push(url);
-        }
-        const provider = new Cesium.GeoTerrainProvider({
-            urls: terrainUrls
-        });
-
-        viewer.terrainProvider = provider;
-
+        
         // 叠加三维地名服务
         const wtfs = new Cesium.GeoWTFS({
             viewer,
@@ -107,18 +110,15 @@
                 height: 18
             }
         });
-
         //三维地名服务，使用wtfs服务
         wtfs.getTileUrl = function () {
-            return tdtUrl + 'mapservice/GetTiles?lxys={z},{x},{y}&tk=' + token;
+            return tdtUrl + 'mapservice/GetTiles?lxys={z},{x},{y}&VERSION=1.0.0&tk=' + token;
         }
-
         wtfs.getIcoUrl = function () {
             return tdtUrl + 'mapservice/GetIcon?id={id}&tk=' + token;
         }
-
         wtfs.initTDT([{ "x": 6, "y": 1, "level": 2, "boundBox": { "minX": 90, "minY": 0, "maxX": 135, "maxY": 45 } }, { "x": 7, "y": 1, "level": 2, "boundBox": { "minX": 135, "minY": 0, "maxX": 180, "maxY": 45 } }, { "x": 6, "y": 0, "level": 2, "boundBox": { "minX": 90, "minY": 45, "maxX": 135, "maxY": 90 } }, { "x": 7, "y": 0, "level": 2, "boundBox": { "minX": 135, "minY": 45, "maxX": 180, "maxY": 90 } }, { "x": 5, "y": 1, "level": 2, "boundBox": { "minX": 45, "minY": 0, "maxX": 90, "maxY": 45 } }, { "x": 4, "y": 1, "level": 2, "boundBox": { "minX": 0, "minY": 0, "maxX": 45, "maxY": 45 } }, { "x": 5, "y": 0, "level": 2, "boundBox": { "minX": 45, "minY": 45, "maxX": 90, "maxY": 90 } }, { "x": 4, "y": 0, "level": 2, "boundBox": { "minX": 0, "minY": 45, "maxX": 45, "maxY": 90 } }, { "x": 6, "y": 2, "level": 2, "boundBox": { "minX": 90, "minY": -45, "maxX": 135, "maxY": 0 } }, { "x": 6, "y": 3, "level": 2, "boundBox": { "minX": 90, "minY": -90, "maxX": 135, "maxY": -45 } }, { "x": 7, "y": 2, "level": 2, "boundBox": { "minX": 135, "minY": -45, "maxX": 180, "maxY": 0 } }, { "x": 5, "y": 2, "level": 2, "boundBox": { "minX": 45, "minY": -45, "maxX": 90, "maxY": 0 } }, { "x": 4, "y": 2, "level": 2, "boundBox": { "minX": 0, "minY": -45, "maxX": 45, "maxY": 0 } }, { "x": 3, "y": 1, "level": 2, "boundBox": { "minX": -45, "minY": 0, "maxX": 0, "maxY": 45 } }, { "x": 3, "y": 0, "level": 2, "boundBox": { "minX": -45, "minY": 45, "maxX": 0, "maxY": 90 } }, { "x": 2, "y": 0, "level": 2, "boundBox": { "minX": -90, "minY": 45, "maxX": -45, "maxY": 90 } }, { "x": 0, "y": 1, "level": 2, "boundBox": { "minX": -180, "minY": 0, "maxX": -135, "maxY": 45 } }, { "x": 1, "y": 0, "level": 2, "boundBox": { "minX": -135, "minY": 45, "maxX": -90, "maxY": 90 } }, { "x": 0, "y": 0, "level": 2, "boundBox": { "minX": -180, "minY": 45, "maxX": -135, "maxY": 90 } }]);
-
+        
         // 将三维球定位到中国
         viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(103.84, 31.15, 17850000),
