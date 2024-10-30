@@ -1,3 +1,9 @@
+console.log(
+    "%c欢迎使用CesiumTdt插件，%c该插件由Jason提供，%c目前支持1.120版本",
+    "color: green; font-size: 16px; font-weight: bold;",
+    "color: blue; font-size: 14px; font-style: italic;",
+    "color: red; font-size: 14px; font-weight: bold;"
+);
 !function(e, t) {
     "object" == typeof exports && "object" == typeof module ? module.exports = t() : "function" == typeof define && define.amd ? define([], t) : "object" == typeof exports ? exports.cesiumTdt = t() : e.cesiumTdt = t()
 }(window, (function() {
